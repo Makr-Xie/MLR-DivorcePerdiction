@@ -1,0 +1,113 @@
+---
+title: "Final Project"
+author: "Mark"
+date: "2023-11-21"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+```{r}
+data <- read.csv("~/Desktop/Unjuanable/UIUC/Fall 2023/STAT 425/Final Project/archive/Marriage_Divorce_DB.csv")
+```
+
+```{r}
+mod <- lm(Divorce.Probability ~ ., data = data)
+summary(mod)
+```
+
+
+
+```{r}
+
+initial_model <- lm(Divorce.Probability ~ 1, data = data)
+#transformation first ! scale it to 0-1
+# group average -> low R^2 ? 
+full_model <- lm(Divorce.Probability ~ ., data = data)
+final_model <- step(full_model, direction = "backward", scope = list(lower = initial_model, upper = full_model))
+
+summary(final_model)
+```
+
+
+
+
+```{r}
+plot(final_model)
+
+residuals <- final_model$residuals
+
+# Calculate MSE
+mse <- mean(residuals^2)
+
+# Print the MSE
+print(mse)
+```
+
+```{r}
+# Extract predictors from the model
+predictors <- model.matrix(final_model, data)[, -1]  # '-1' excludes the intercept
+
+# Calculate the correlation matrix
+correlation_matrix <- cor(predictors)
+
+# Display the correlation matrix
+print(correlation_matrix)
+```
+
+
+
+```{r}
+library(MASS)
+bc <- boxcox(final_model)
+lambda <- bc$x[which.max(bc$y)]
+lambda
+mod_bc <- lm(Divorce.Probability ^ lambda ~ Education + Start.Socializing.with.the.Opposite.Sex.Age + 
+    Good.Income + Love + Desire.to.Marry, data = data)
+summary(mod_bc)
+```
+
+
+
+```{r}
+library(MASS)
+test_mod <- lm(formula = Divorce.Probability ~ Education * poly(Start.Socializing.with.the.Opposite.Sex.Age, 2) + 
+    Good.Income + Love + Desire.to.Marry, data = data)
+summary(test_mod)
+```
+
+## Tranformation
+
+```{r}
+# Normalize Divorce.Probability to be between 0 and 1
+data2 <- read.csv("~/Desktop/Unjuanable/UIUC/Fall 2023/STAT 425/Final Project/archive/Marriage_Divorce_DB.csv")
+data2$Divorce.Probability = asin(sqrt((data$Divorce.Probability - 1) / 2))
+
+initial_model_2 <- lm(Divorce.Probability ~ 1, data = data2)
+
+full_model_2 <- lm(Divorce.Probability ~ ., data = data2)
+
+## final_model_2 <- step(initial_model_2, direction = "forward", scope = list(lower = initial_model_2, upper = full_model_2))
+
+final_model_2 <- lm(formula = asin(sqrt((data$Divorce.Probability - 1) / 2)) ~ Education + Good.Income + 
+    Start.Socializing.with.the.Opposite.Sex.Age + Love + Desire.to.Marry, 
+    data = data)
+
+summary(final_model_2)
+```
+
+
+```{r}
+plot(final_model_2)
+```
+```{r}
+mod <- lm(formula = asin(sqrt((data$Divorce.Probability - 1) / 2)) ~ Education + 
+    Good.Income + Love + Desire.to.Marry + poly(Start.Socializing.with.the.Opposite.Sex.Age, 2), data = data)
+
+summary(mod)
+```
+ 
